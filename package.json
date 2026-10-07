@@ -1,0 +1,20 @@
+{
+  "name": "organization-management-typescript",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Organization Management System implemented using TypeScript OOP concepts",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/src/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest --runInBand",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
