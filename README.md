@@ -2,6 +2,14 @@
 
 A console-based Organization Management System implemented using TypeScript and object-oriented programming concepts.
 
+## MCQ answers
+
+1. B
+2. B
+3. B
+4. C
+5. B
+
 ## Assignment coverage
 
 The implementation supports:
