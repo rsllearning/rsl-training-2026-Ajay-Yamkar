@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Repository Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>GitHub Repository Tracker</h1>
+      <p>Fetch public repositories and owner details from GitHub.</p>
+    </header>
+
+    <section class="search-panel">
+      <label for="username">GitHub Username</label>
+      <div class="search-row">
+        <input id="username" type="text" placeholder="e.g. octocat" autocomplete="off" />
+        <button id="trackButton">Track</button>
+      </div>
+      <p id="refreshInfo" class="muted">Automatic refresh: every 60 seconds after tracking a user.</p>
+    </section>
+
+    <section id="status" class="status" aria-live="polite"></section>
+
+    <section id="ownerSection" class="owner-section hidden">
+      <h2>Owner Details</h2>
+      <div id="ownerDetails" class="owner-card"></div>
+    </section>
+
+    <section id="repositoriesSection" class="hidden">
+      <div class="section-heading">
+        <h2>Public Repositories</h2>
+        <span id="repoCount" class="badge"></span>
+      </div>
+      <div id="repositories" class="repo-grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

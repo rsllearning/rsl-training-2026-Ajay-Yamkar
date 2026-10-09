@@ -1,0 +1,199 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f6f8fa;
+  color: #24292f;
+}
+
+.container {
+  width: min(1100px, 92%);
+  margin: 40px auto;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+header h1 {
+  margin-bottom: 8px;
+}
+
+header p,
+.muted {
+  color: #57606a;
+}
+
+.search-panel,
+.owner-card,
+.repo-card {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+}
+
+.search-panel {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.search-panel label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 11px 12px;
+  border: 1px solid #8c959f;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  padding: 11px 20px;
+  border: 0;
+  border-radius: 6px;
+  background: #0969da;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0757b3;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status {
+  margin: 16px 0;
+  min-height: 24px;
+  font-weight: 600;
+}
+
+.status.success {
+  color: #1a7f37;
+}
+
+.status.error {
+  color: #cf222e;
+}
+
+.status.loading {
+  color: #0969da;
+}
+
+.hidden {
+  display: none;
+}
+
+.owner-section {
+  margin: 24px 0;
+}
+
+.owner-card {
+  padding: 20px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.owner-card img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+}
+
+.owner-card h3 {
+  margin: 0 0 8px;
+}
+
+.owner-card p {
+  margin: 4px 0;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 12px;
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+.badge {
+  background: #ddf4ff;
+  color: #0969da;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.repo-card {
+  padding: 18px;
+}
+
+.repo-card h3 {
+  margin-top: 0;
+}
+
+.repo-card h3 a {
+  color: #0969da;
+  text-decoration: none;
+}
+
+.repo-card h3 a:hover {
+  text-decoration: underline;
+}
+
+.repo-description {
+  color: #57606a;
+  min-height: 42px;
+}
+
+.repo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.repo-meta span {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .search-row {
+    flex-direction: column;
+  }
+
+  .owner-card {
+    align-items: flex-start;
+  }
+}
