@@ -1,7 +1,18 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useActorRef, useSelector } from '@xstate/react';
+import type { ActorRefFrom } from 'xstate';
 import { ProductCard, type AddProduct } from './components/ShopShell';
+import { checkoutMachine } from './state/checkoutMachine';
 import { selectCartCount, selectCartTotal, useCartStore } from './state/zustand';
-import type { CartItem, Product } from './types';
+import type { Product } from './types';
+
+type CheckoutActor = ActorRefFrom<typeof checkoutMachine>;
+const CheckoutActorContext = createContext<CheckoutActor | null>(null);
+function useCheckoutActor() {
+  const actor = useContext(CheckoutActorContext);
+  if (!actor) throw new Error('Checkout components must be inside the shared checkout actor provider');
+  return actor;
+}
 
 export function Catalog({ products, onAdd }: { products: Product[]; onAdd?: AddProduct }) {
   return <section className="catalog-column" id="catalog">
@@ -15,9 +26,8 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const items = useCartStore((state) => state.items);
   const add = useCartStore((state) => state.addItem);
-  const remove = useCartStore((state) => state.removeItem);
+  const actor = useActorRef(checkoutMachine, { input: { items: useCartStore.getState().items } });
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/products', { signal: controller.signal })
@@ -28,25 +38,35 @@ export default function App() {
     return () => controller.abort();
   }, []);
 
-  return <div className="app-shell">
-    <Header count={selectCartCount(items)} />
+  return <CheckoutActorContext.Provider value={actor}>
+    <CartSynchronizer />
+    <OrderCompletionBridge />
+    <div className="app-shell">
+    <Header />
     <main id="top">
       <Hero />
       <div className="benefits-strip"><span>✳ Carefully considered design</span><span>·</span><span>Free shipping over $100</span><span>·</span><span>Made for the long haul</span></div>
       <section className="shop-layout">
         {loading ? <div className="catalog-message">Setting the scene…</div> : error ? <div className="catalog-message error-text">{error}</div> : <Catalog products={products} onAdd={add} />}
-        <CartShell items={items} onRemove={remove} />
+        <CartShell />
+        <PaymentPanel />
       </section>
       <Story />
       <Footer />
     </main>
-  </div>;
+    </div>
+  </CheckoutActorContext.Provider>;
 }
 
-function Header({ count }: { count: number }) {
+function Header() {
   return <header className="topbar"><a className="wordmark" href="#top" aria-label="ShopCart home"><span className="mark">s.</span> sunday<span className="wordmark-light">goods</span></a>
-    <div className="topbar-right"><div className="desktop-nav"><a href="#catalog">Shop</a><a href="#story">Our approach</a></div><div className="bag-pill"><span>Bag</span><span className="bag-count">{count}</span></div></div>
+    <div className="topbar-right"><div className="desktop-nav"><a href="#catalog">Shop</a><a href="#story">Our approach</a></div><div className="bag-pill"><span>Bag</span><StoreBadge /></div></div>
   </header>;
+}
+
+function StoreBadge() {
+  const count = useCartStore((state) => selectCartCount(state.items));
+  return <span className="bag-count">{count}</span>;
 }
 
 function Hero() {
@@ -55,23 +75,57 @@ function Hero() {
     <div className="hero-art" aria-label="A warm, curated workspace illustration"><div className="sun-disc" /><div className="art-plant">✳</div><div className="art-lamp">⌁</div><div className="art-book" /><div className="art-cup">◖</div><span className="art-note">A slower kind<br />of productivity.</span><span className="art-grain" /></div><div className="hero-index"><span>01 — 04</span><span>THE WORKSPACE EDIT</span></div></section></>;
 }
 
-function CartShell({ items, onRemove }: { items: CartItem[]; onRemove: (id: string) => void }) {
-  const total = selectCartTotal(items);
-  const checkout = useCartStore((state) => state.checkout);
-  const checkoutStatus = useCartStore((state) => state.checkoutStatus);
-  const [checkoutMessage, setCheckoutMessage] = useState('');
-  const onCheckout = async () => {
-    setCheckoutMessage('');
-    try { const order = await checkout(); setCheckoutMessage(`Order ${order.id} placed successfully.`); }
-    catch (reason) { setCheckoutMessage(reason instanceof Error ? reason.message : 'Checkout failed. Please try again.'); }
-  };
-  return <aside className="cart-column"><div className="cart-card"><div className="cart-heading"><div><span className="eyebrow">YOUR SELECTION</span><h2>Your bag</h2></div><span className="bag-count">{selectCartCount(items)}</span></div>
-    {items.length === 0 ? <div className="empty-cart"><span className="empty-bag">⌑</span><p>Your bag is taking a breather.</p><span>Add something you love.</span></div> : <div className="cart-items">{items.map((item) => <div className="cart-item" key={item.id}>
-      <div className={`mini-art ${item.color}`}>{item.icon}</div><div className="cart-item-copy"><strong>{item.name}</strong><span>Qty {item.quantity} · ${item.price} each</span><button className="remove-button" onClick={() => onRemove(item.id)}>Remove</button></div><b>${item.price * item.quantity}</b>
-    </div>)}</div>}
-    <div className="total-row"><span>Estimated total</span><strong>${total}</strong></div><button className="checkout-button" disabled={!items.length || checkoutStatus === 'submitting'} onClick={onCheckout}>{checkoutStatus === 'submitting' ? 'Placing your order…' : 'Continue to checkout'} <span>↗</span></button>
-    {checkoutMessage && <p className={`checkout-message ${checkoutStatus === 'error' ? 'error-text' : ''}`} role={checkoutStatus === 'error' ? 'alert' : 'status'}>{checkoutMessage}</p>}<p className="secure-note"><span>✳</span> Secure checkout · Free shipping over $100</p>
+function CartShell() {
+  return <aside className="cart-column"><div className="cart-card"><div className="cart-heading"><div><span className="eyebrow">YOUR SELECTION</span><h2>Your bag</h2></div><StoreBadge /></div>
+    <CartItemsList /><CartErrorBanner /><CartTotal /><CheckoutButton /><p className="secure-note"><span>✳</span> Secure checkout · Free shipping over $100</p>
   </div></aside>;
+}
+
+function CartItemsList() {
+  const items = useCartStore((state) => state.items);
+  const remove = useCartStore((state) => state.removeItem);
+  if (!items.length) return <div className="empty-cart"><span className="empty-bag">⌑</span><p>Your bag is taking a breather.</p><span>Add something you love.</span></div>;
+  return <div className="cart-items">{items.map((item) => <div className="cart-item" key={item.id}>
+    <div className={`mini-art ${item.color}`}>{item.icon}</div><div className="cart-item-copy"><strong>{item.name}</strong><span>Qty {item.quantity} · ${item.price} each</span><button className="remove-button" onClick={() => remove(item.id)}>Remove</button></div><b>${item.price * item.quantity}</b>
+  </div>)}</div>;
+}
+function CartTotal() { const total = useCartStore((state) => selectCartTotal(state.items)); return <div className="total-row"><span>Estimated total</span><strong>${total}</strong></div>; }
+function CartErrorBanner() {
+  const actor = useCheckoutActor();
+  const error = useSelector(actor, (snapshot) => snapshot.context.error);
+  return error ? <div role="alert" className="error-banner"><span>!</span><p>{error}</p></div> : null;
+}
+function CheckoutButton() {
+  const actor = useCheckoutActor();
+  const canSubmit = useSelector(actor, (snapshot) => snapshot.can({ type: 'SUBMIT' }));
+  const isSubmitting = useSelector(actor, (snapshot) => snapshot.matches('submitting'));
+  return <button className="checkout-button" disabled={!canSubmit} onClick={() => actor.send({ type: 'SUBMIT' })}>{isSubmitting ? 'Processing payment…' : 'Continue to checkout'} <span>↗</span></button>;
+}
+function CartSynchronizer() {
+  const actor = useCheckoutActor();
+  const items = useCartStore((state) => state.items);
+  useEffect(() => { actor.send({ type: 'CART_UPDATED', items }); }, [actor, items]);
+  return null;
+}
+function OrderCompletionBridge() {
+  const actor = useCheckoutActor();
+  const orderId = useSelector(actor, (snapshot) => snapshot.matches('success') ? snapshot.context.order?.id : undefined);
+  useEffect(() => { if (orderId) useCartStore.getState().clearCart(); }, [orderId]);
+  return null;
+}
+function PaymentPanel() {
+  const actor = useCheckoutActor();
+  const isSubmitting = useSelector(actor, (snapshot) => snapshot.matches('submitting'));
+  const isSuccess = useSelector(actor, (snapshot) => snapshot.matches('success'));
+  const order = useSelector(actor, (snapshot) => snapshot.context.order);
+  const error = useSelector(actor, (snapshot) => snapshot.context.error);
+  useEffect(() => { useCartStore.setState({ checkoutStatus: isSubmitting ? 'submitting' : isSuccess ? 'success' : error ? 'error' : 'idle' }); }, [error, isSubmitting, isSuccess]);
+  return <section className={`payment-panel workflow-panel ${isSuccess ? 'payment-success' : ''}`}>
+    <div className="payment-icon">{isSuccess ? '✓' : '↗'}</div><div className="payment-copy"><span className="eyebrow">CHECKOUT WORKFLOW</span>
+      <h3>{isSubmitting ? 'Payment in progress' : isSuccess ? 'Order confirmed' : 'Ready when you are'}</h3>
+      <p>{isSubmitting ? 'Your order is processing. You can cancel while it completes.' : isSuccess ? `Order ${order?.id ?? ''} is on its way.` : 'Checkout is ready when you are.'}</p>
+    </div>{isSubmitting && <button className="cancel-button" onClick={() => actor.send({ type: 'CANCEL' })}>Cancel</button>}
+  </section>;
 }
 
 function Story() {
