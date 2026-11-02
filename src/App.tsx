@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ProductCard, type AddProduct } from './components/ShopShell';
-import type { Product } from './types';
+import { selectCartCount, selectCartTotal, useCartStore } from './state/zustand';
+import type { CartItem, Product } from './types';
 
 export function Catalog({ products, onAdd }: { products: Product[]; onAdd?: AddProduct }) {
   return <section className="catalog-column" id="catalog">
@@ -14,6 +15,9 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const items = useCartStore((state) => state.items);
+  const add = useCartStore((state) => state.addItem);
+  const remove = useCartStore((state) => state.removeItem);
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/products', { signal: controller.signal })
@@ -25,13 +29,13 @@ export default function App() {
   }, []);
 
   return <div className="app-shell">
-    <Header />
+    <Header count={selectCartCount(items)} />
     <main id="top">
       <Hero />
       <div className="benefits-strip"><span>✳ Carefully considered design</span><span>·</span><span>Free shipping over $100</span><span>·</span><span>Made for the long haul</span></div>
       <section className="shop-layout">
-        {loading ? <div className="catalog-message">Setting the scene…</div> : error ? <div className="catalog-message error-text">{error}</div> : <Catalog products={products} />}
-        <CartShell />
+        {loading ? <div className="catalog-message">Setting the scene…</div> : error ? <div className="catalog-message error-text">{error}</div> : <Catalog products={products} onAdd={add} />}
+        <CartShell items={items} onRemove={remove} />
       </section>
       <Story />
       <Footer />
@@ -39,9 +43,9 @@ export default function App() {
   </div>;
 }
 
-function Header() {
+function Header({ count }: { count: number }) {
   return <header className="topbar"><a className="wordmark" href="#top" aria-label="ShopCart home"><span className="mark">s.</span> sunday<span className="wordmark-light">goods</span></a>
-    <div className="topbar-right"><div className="desktop-nav"><a href="#catalog">Shop</a><a href="#story">Our approach</a></div><div className="bag-pill"><span>Bag</span><span className="bag-count">0</span></div></div>
+    <div className="topbar-right"><div className="desktop-nav"><a href="#catalog">Shop</a><a href="#story">Our approach</a></div><div className="bag-pill"><span>Bag</span><span className="bag-count">{count}</span></div></div>
   </header>;
 }
 
@@ -51,10 +55,22 @@ function Hero() {
     <div className="hero-art" aria-label="A warm, curated workspace illustration"><div className="sun-disc" /><div className="art-plant">✳</div><div className="art-lamp">⌁</div><div className="art-book" /><div className="art-cup">◖</div><span className="art-note">A slower kind<br />of productivity.</span><span className="art-grain" /></div><div className="hero-index"><span>01 — 04</span><span>THE WORKSPACE EDIT</span></div></section></>;
 }
 
-function CartShell() {
-  return <aside className="cart-column"><div className="cart-card"><div className="cart-heading"><div><span className="eyebrow">YOUR SELECTION</span><h2>Your bag</h2></div><span className="bag-count">0</span></div>
-    <div className="empty-cart"><span className="empty-bag">⌑</span><p>Your bag is taking a breather.</p><span>Add something you love.</span></div>
-    <div className="total-row"><span>Estimated total</span><strong>$0</strong></div><button className="checkout-button" disabled>Continue to checkout <span>↗</span></button><p className="secure-note"><span>✳</span> Secure checkout · Free shipping over $100</p>
+function CartShell({ items, onRemove }: { items: CartItem[]; onRemove: (id: string) => void }) {
+  const total = selectCartTotal(items);
+  const checkout = useCartStore((state) => state.checkout);
+  const checkoutStatus = useCartStore((state) => state.checkoutStatus);
+  const [checkoutMessage, setCheckoutMessage] = useState('');
+  const onCheckout = async () => {
+    setCheckoutMessage('');
+    try { const order = await checkout(); setCheckoutMessage(`Order ${order.id} placed successfully.`); }
+    catch (reason) { setCheckoutMessage(reason instanceof Error ? reason.message : 'Checkout failed. Please try again.'); }
+  };
+  return <aside className="cart-column"><div className="cart-card"><div className="cart-heading"><div><span className="eyebrow">YOUR SELECTION</span><h2>Your bag</h2></div><span className="bag-count">{selectCartCount(items)}</span></div>
+    {items.length === 0 ? <div className="empty-cart"><span className="empty-bag">⌑</span><p>Your bag is taking a breather.</p><span>Add something you love.</span></div> : <div className="cart-items">{items.map((item) => <div className="cart-item" key={item.id}>
+      <div className={`mini-art ${item.color}`}>{item.icon}</div><div className="cart-item-copy"><strong>{item.name}</strong><span>Qty {item.quantity} · ${item.price} each</span><button className="remove-button" onClick={() => onRemove(item.id)}>Remove</button></div><b>${item.price * item.quantity}</b>
+    </div>)}</div>}
+    <div className="total-row"><span>Estimated total</span><strong>${total}</strong></div><button className="checkout-button" disabled={!items.length || checkoutStatus === 'submitting'} onClick={onCheckout}>{checkoutStatus === 'submitting' ? 'Placing your order…' : 'Continue to checkout'} <span>↗</span></button>
+    {checkoutMessage && <p className={`checkout-message ${checkoutStatus === 'error' ? 'error-text' : ''}`} role={checkoutStatus === 'error' ? 'alert' : 'status'}>{checkoutMessage}</p>}<p className="secure-note"><span>✳</span> Secure checkout · Free shipping over $100</p>
   </div></aside>;
 }
 
