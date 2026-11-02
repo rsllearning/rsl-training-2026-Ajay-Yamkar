@@ -1,0 +1,9 @@
+{
+  "products": [
+    { "id": "p1", "name": "Mechanical Keyboard", "price": 120, "category": "KEYBOARDS", "description": "Tactile switches, a satisfying sound, and a layout built for long days at your desk.", "color": "sand", "icon": "⌨" },
+    { "id": "p2", "name": "Wireless Ergonomic Mouse", "price": 55, "category": "POINTING DEVICES", "description": "A sculpted shape that keeps your hand comfortable from first click to last.", "color": "sage", "icon": "◉" },
+    { "id": "p3", "name": "USB-C Multiport Adapter", "price": 35, "category": "CONNECTIVITY", "description": "Every port you need, in a pocket-sized hub with a brushed aluminum finish.", "color": "blue", "icon": "⏣" },
+    { "id": "p4", "name": "Ultra-Wide Monitor Light Bar", "price": 75, "category": "LIGHTING", "description": "Warm, even light across your workspace without a single reflection on screen.", "color": "rose", "icon": "☼" }
+  ],
+  "orders": []
+}
