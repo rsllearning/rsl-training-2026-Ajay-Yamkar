@@ -1,6 +1,14 @@
-# ShopCart — client-side state management
+# ShopCart — modern client-side state management
 
-A React + TypeScript shop demonstrating three cart state models (Context + `useReducer`, Zustand, and Jotai) and an XState v5 checkout workflow backed by json-server.
+This repository is organized as assignment branches. `common` contains the React + Vite shell, shared TypeScript types, mock API database, and Vite proxy. Each deliverable branch adds its own cart state implementation:
+
+```text
+common
+├── deliverable-1-context
+├── deliverable-2-zustand
+│   └── deliverable-4-xstate
+└── deliverable-3-jotai
+```
 
 ## Run locally
 
@@ -10,13 +18,4 @@ npm run server # terminal 1: http://localhost:3001
 npm run dev    # terminal 2: http://localhost:5173
 ```
 
-The Vite `/api` proxy forwards to json-server. Pick a cart implementation from the state model switcher in the header. Each model shares the same catalog and cart UI; checkout uses the Zustand store and the shared XState actor so the workflow can demonstrate the cross-store synchronization.
-
-## State model comparison
-
-- **Context + reducer** — split state and dispatch contexts; dispatch-only controls do not subscribe to cart changes.
-- **Zustand** — minimal selectors and derived totals; checkout status is part of the store.
-- **Jotai** — writable cart atom plus derived count and price atoms and write-only action atoms.
-- **XState v5** — review, submitting, and success states; guarded submission, cancellable promise actor, error recovery, and store synchronization.
-
-`npm run build` runs TypeScript checking and creates a production bundle.
+The Vite `/api` proxy forwards requests to json-server. Each deliverable branch builds on the same catalog and visual shell. `npm run build` runs TypeScript checking and creates a production bundle.
