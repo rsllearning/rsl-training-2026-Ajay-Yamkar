@@ -1,0 +1,22 @@
+import { style } from '@vanilla-extract/css'
+import { vars } from './theme.css'
+
+export const page = style({ minHeight: '100vh', background: vars.color.canvas, color: vars.color.ink })
+export const topbar = style({ height: 68, padding: '0 clamp(20px, 5vw, 72px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: vars.color.paper, borderBottom: `1px solid ${vars.color.line}` })
+export const brand = style({ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, letterSpacing: '-0.03em' })
+export const brandMark = style({ width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: vars.radius.md, color: '#fff', background: vars.color.primary })
+export const topActions = style({ display: 'flex', alignItems: 'center', gap: vars.space[3] })
+export const content = style({ width: 'min(100% - 40px, 1024px)', margin: '0 auto', padding: 'clamp(36px, 7vw, 76px) 0 56px' })
+export const eyebrow = style({ display: 'flex', alignItems: 'center', gap: 8, color: vars.color.primary, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase' })
+export const heading = style({ margin: '14px 0 10px', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(36px, 6vw, 56px)', fontWeight: 500, letterSpacing: '-.045em', lineHeight: 1.06 })
+export const intro = style({ maxWidth: 610, margin: 0, color: vars.color.muted, fontSize: 16, lineHeight: 1.7 })
+export const showcase = style({ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 290px), 1fr))', gap: vars.space[5], marginTop: 38 })
+export const sectionLabel = style({ margin: '0 0 15px', display: 'flex', alignItems: 'center', gap: 9, fontSize: 11, fontWeight: 700, color: vars.color.muted, letterSpacing: '.13em', textTransform: 'uppercase' })
+export const sectionIcon = style({ color: vars.color.primary })
+export const buttonRow = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: vars.space[2] })
+export const demoPanel = style({ background: '#fafbf9', border: `1px solid ${vars.color.line}`, borderRadius: vars.radius.md, padding: vars.space[4] })
+export const demoPanelLabel = style({ margin: '0 0 12px', color: vars.color.muted, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' })
+export const subheading = style({ margin: '30px 0 12px', fontSize: 13, fontWeight: 600 })
+export const tokenStrip = style({ marginTop: vars.space[6], padding: vars.space[4], border: `1px solid ${vars.color.line}`, borderRadius: vars.radius.lg, background: vars.color.paper, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: vars.space[3] })
+export const swatch = style({ display: 'inline-block', width: 13, height: 13, marginRight: 7, verticalAlign: '-2px', borderRadius: vars.radius.pill, background: vars.color.primary })
+export const footnote = style({ marginTop: vars.space[5], color: vars.color.muted, fontSize: 12, lineHeight: 1.6 })

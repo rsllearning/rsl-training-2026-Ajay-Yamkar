@@ -1,0 +1,12 @@
+{
+  "name": "styling-paradigms-assignment",
+  "private": true,
+  "workspaces": ["exercises/*"],
+  "scripts": {
+    "dev:dashboard": "npm run dev --workspace @assignment/tailwind-dashboard",
+    "dev:library": "npm run dev --workspace @assignment/vanilla-extract-library",
+    "build": "npm run build --workspaces --if-present",
+    "build:dashboard": "npm run build --workspace @assignment/tailwind-dashboard",
+    "build:library": "npm run build --workspace @assignment/vanilla-extract-library"
+  }
+}
