@@ -82,3 +82,12 @@ button:hover {
     margin-top: 15px;
     font-weight: bold;
 }
+
+.account-card {
+    max-width: 600px;
+    margin: auto;
+}
+
+.danger {
+    background: #c62828;
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header class="header">
+        <h1>User Security Dashboard</h1>
+        <nav>
+            <a href="/">Dashboard</a>
+            <a href="/account">Account Settings</a>
+        </nav>
+    </header>
+    <main class="container">
+        <section class="account-card">
+            <h2>Account Settings</h2>
+            <p><strong>Name:</strong> <span id="account-name">Loading…</span></p>
+            <p><strong>Email:</strong> <span id="account-email">Loading…</span></p>
+            <p><strong>Role:</strong> <span id="account-role">Loading…</span></p>
+            <button id="delete-account" class="danger" type="button">Delete Account</button>
+            <p id="account-status" role="status" aria-live="polite"></p>
+        </section>
+    </main>
+    <script src="/app.js"></script>
+</body>
+</html>

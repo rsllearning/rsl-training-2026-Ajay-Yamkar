@@ -4,202 +4,108 @@ const path = require("path");
 const { user, defaultSettings } = require("./data");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const clientDirectory = path.join(__dirname, "..", "client");
+const allowedSettings = new Set(["theme", "language", "fontSize"]);
+const settingValues = {
+    theme: new Set(["light", "dark"]),
+    language: new Set(["en", "fr"]),
+    fontSize: new Set(["small", "medium", "large"])
+};
 
-app.use(express.json());
+// These response headers provide defense in depth for every page and API.
+app.use((req, res, next) => {
+    res.set({
+        "Content-Security-Policy": [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self'",
+            "img-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'"
+        ].join("; "),
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+    });
+    next();
+});
 
-/*
- * Home page
- */
+app.use(express.json({ limit: "10kb" }));
+
+function publicProfile(source) {
+    // Only return fields that the browser needs. Credentials remain server-side.
+    return {
+        id: source.id,
+        name: source.name,
+        email: source.email,
+        role: source.role
+    };
+}
+
+function validateSettings(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+
+    const keys = Object.keys(value);
+    if (keys.length !== allowedSettings.size || keys.some((key) => !allowedSettings.has(key))) {
+        return null;
+    }
+
+    const settings = Object.create(null);
+    for (const key of allowedSettings) {
+        if (!Object.hasOwn(value, key) || !settingValues[key].has(value[key])) {
+            return null;
+        }
+        settings[key] = value[key];
+    }
+    return settings;
+}
+
 app.get("/", (req, res) => {
-    const initialUserData = JSON.stringify(user);
-
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0"
-            >
-            <title>User Security Dashboard</title>
-            <link rel="stylesheet" href="/styles.css">
-        </head>
-
-        <body>
-            <header class="header">
-                <h1>User Security Dashboard</h1>
-                <nav>
-                    <a href="/">Dashboard</a>
-                    <a href="/account">Account Settings</a>
-                </nav>
-            </header>
-
-            <main class="container">
-                <div id="app"></div>
-
-                <section class="settings">
-                    <h2>User Settings</h2>
-
-                    <label>
-                        Theme:
-                        <select id="theme">
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </label>
-
-                    <label>
-                        Language:
-                        <select id="language">
-                            <option value="en">English</option>
-                            <option value="fr">French</option>
-                        </select>
-                    </label>
-
-                    <label>
-                        Font Size:
-                        <select id="fontSize">
-                            <option value="small">Small</option>
-                            <option value="medium">Medium</option>
-                            <option value="large">Large</option>
-                        </select>
-                    </label>
-
-                    <button id="save-settings">
-                        Save Settings
-                    </button>
-
-                    <p id="settings-status"></p>
-                </section>
-            </main>
-
-            <script>
-                window.initialUser = ${initialUserData};
-            </script>
-
-            <script src="/app.js"></script>
-        </body>
-        </html>
-    `);
+    res.sendFile(path.join(clientDirectory, "index.html"));
 });
 
-/*
- * Profile API
- */
+app.get("/account", (req, res) => {
+    res.sendFile(path.join(clientDirectory, "account.html"));
+});
+
 app.get("/api/profile", (req, res) => {
-    res.json(user);
+    res.set("Cache-Control", "no-store").json(publicProfile(user));
 });
 
-/*
- * Settings API
- */
 app.get("/api/settings", (req, res) => {
-    res.json(defaultSettings);
+    res.set("Cache-Control", "no-store").json({ ...defaultSettings });
 });
 
 app.post("/api/settings", (req, res) => {
-    const incomingSettings = req.body;
-
-    const settings = {};
-
-    for (const key in incomingSettings) {
-        settings[key] = incomingSettings[key];
+    const settings = validateSettings(req.body);
+    if (!settings) {
+        return res.status(400).json({ error: "Invalid settings." });
     }
 
-    res.json({
+    return res.json({
         message: "Settings saved successfully.",
         settings
     });
 });
 
-/*
- * Account page
- */
-app.get("/account", (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0"
-            >
-            <title>Account Settings</title>
+app.use(express.static(clientDirectory, {
+    dotfiles: "deny",
+    index: false,
+    setHeaders(res) {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+    }
+}));
 
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background: #f4f4f4;
-                    margin: 0;
-                    padding: 40px;
-                }
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Application running at http://localhost:${PORT}`);
+    });
+}
 
-                .account-card {
-                    max-width: 600px;
-                    margin: auto;
-                    background: white;
-                    padding: 30px;
-                    border-radius: 8px;
-                }
-
-                .danger {
-                    background: #c62828;
-                    color: white;
-                    border: none;
-                    padding: 12px 20px;
-                    cursor: pointer;
-                    border-radius: 4px;
-                }
-            </style>
-        </head>
-
-        <body>
-            <div class="account-card">
-                <h1>Account Settings</h1>
-
-                <p>
-                    <strong>Name:</strong>
-                    ${user.name}
-                </p>
-
-                <p>
-                    <strong>Email:</strong>
-                    ${user.email}
-                </p>
-
-                <p>
-                    <strong>Role:</strong>
-                    ${user.role}
-                </p>
-
-                <button
-                    id="delete-account"
-                    class="danger"
-                >
-                    Delete Account
-                </button>
-
-                <p id="status"></p>
-            </div>
-
-            <script>
-                document
-                    .getElementById("delete-account")
-                    .addEventListener("click", () => {
-                        document.getElementById("status").textContent =
-                            "Account deletion action triggered.";
-                    });
-            </script>
-        </body>
-        </html>
-    `);
-});
-
-app.use(express.static(path.join(__dirname, "..", "client")));
-
-app.listen(PORT, () => {
-    console.log(`Application running at http://localhost:${PORT}`);
-});
+module.exports = { app, publicProfile, validateSettings };
