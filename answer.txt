@@ -1,0 +1,38 @@
+Part A: Hands-On Security Code Review
+
+Finding 1: location.hash - Untrusted URL Data
+The URL fragment is controlled by the visitor. Treat it as untrusted input even though it is not sent to the server in an HTTP request.
+
+Finding 2: document.querySelector("#result").innerHTML - DOM-Based Cross-Site Scripting (DOM XSS)
+The fragment is written to an HTML parsing sink. A crafted fragment such as markup containing an event handler can execute script in the page's origin. Render it with textContent (or create DOM nodes and assign textContent) instead of innerHTML. Validate the destination element exists before using it.
+
+Finding 3: localStorage.getItem("config") - Untrusted, User-Modifiable Persistent Data
+Values in localStorage are controlled by the user and can be changed through developer tools or same-origin script execution. JSON.parse does not make this data trusted. Handle missing, malformed, and unexpected data, and validate its schema before use. Do not store secrets in localStorage.
+
+Finding 4: JSON.parse(...) - Unvalidated JSON Input
+Parsing only checks JSON syntax, not that the result has the expected type or safe keys. The parsed value may be null, an array, a primitive, or an object containing dangerous property names. Reject unexpected shapes and validate allowed fields and value types.
+
+Finding 5: Object.assign(config, parsedConfig) - Prototype Pollution
+Object.assign copies own enumerable properties by assignment. A JSON object containing an own "__proto__" property can invoke the target's prototype setter, changing config's prototype. This can cause unsafe inherited values to affect later logic. Reject keys such as __proto__, constructor, and prototype; copy only explicitly allowed properties into a null-prototype object or use a schema-validated safe merge. Note that this particular assignment targets config; it does not by itself prove that the global Object.prototype is polluted.
+
+Finding 6: Object.assign(config, parsedConfig) - Unsafe Configuration Merge
+The merge accepts every supplied field without an allowlist or schema. Unexpected settings can alter application behavior even without prototype pollution. Copy only known keys after validating their types and bounds.
+
+Finding 7: await getUser() - Sensitive Server Data Crossing the Client Boundary
+The returned user object may contain access tokens, refresh tokens, session identifiers, password-related fields, or other server-only data. A server-rendered object passed into client rendering or serialized for hydration becomes visible to the browser and its user. Return and serialize only the minimum public fields needed by the UI; keep credentials server-side.
+
+Finding 8: renderClient({ user }) - Potential SSR / Hydration Data Leakage
+Passing a complete server-side user object to client rendering can expose all enumerable properties when the framework serializes props into HTML or hydration data. Construct a deliberately minimal client-safe view model before rendering, and verify the generated HTML and network responses contain no secrets.
+
+Finding 9: Document response / deployment configuration - Content Security Policy (CSP)
+The snippet shows no CSP control. Without a restrictive response-header CSP, an injection flaw may have a larger impact. Configure a policy using nonces or hashes for required scripts, restrict script sources, and avoid unsafe-inline and unsafe-eval where possible. CSP is defense in depth and does not replace safe DOM rendering.
+
+Finding 10: Document response / deployment configuration - Clickjacking
+The snippet shows no protection against being framed by an attacker-controlled site. Set Content-Security-Policy frame-ancestors to the intended trusted origins (or 'none' if framing is not needed), with X-Frame-Options as a legacy fallback where appropriate.
+
+Verification scenarios:
+- Put HTML and an event-handler payload in the URL fragment; confirm it is displayed as literal text and no script runs.
+- Try missing, malformed, null, array, primitive, and unexpected-shape values in localStorage; confirm safe defaults or a clear validation error.
+- Try JSON config containing __proto__, constructor, and prototype keys; confirm it is rejected or ignored and neither the target nor Object.prototype gains attacker-controlled properties.
+- Inspect rendered HTML, hydration payloads, and client-visible network responses for token- or credential-like fields; confirm none are present.
+- Inspect response headers and attempt to frame the page from an untrusted origin; confirm CSP frame-ancestors (and any fallback) blocks it.
